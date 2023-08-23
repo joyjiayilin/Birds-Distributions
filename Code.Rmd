@@ -1,0 +1,215 @@
+---
+title: "Data project 1: Birds, birds, birds"
+author: Joy Lin (student ID 3034967313)
+output: 
+  pdf_document:
+          number_sections: false
+---
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+library(tidyverse)
+birds <- read_csv("bay_area_birds.csv")
+# look at the first 6 rows
+# head(birds)
+```
+
+## Part 1: Critical Thinking
+
+
+## Part 2: Working with the data
+
+
+```{r, echo = FALSE, results = "hide"}
+# use the results = "hide" chunk option when you don't want the output of the chunk to appear in the pdf
+# echo = FALSE will hide the code itself from the pdf output
+
+```
+
+
+```{r, 1. How many unique feeder locations were there in the provided data in 2011?}
+nrow(distinct(filter(birds, year == "2011"), loc_id))
+```
+
+
+
+```{r, 1. How many unique feeder locations were there in the provided data in 2021?}
+nrow(distinct(filter(birds, year == "2021"), loc_id))
+```
+
+
+
+```{r, 1. How many feeder locations provide data in both 2011 and 2021?}
+nrow(filter(count(distinct(filter(birds, year %in% c("2011","2021")), loc_id, year), loc_id), n == '2'))
+```
+
+
+
+```{r, 2. What were the five species that visited the feeders in the largest flocks in 2011?}
+
+slice_tail(arrange(summarise(group_by(filter(birds, year == "2011"), species_name), ave = mean(max_individuals)), ave), n = 5)
+
+```
+
+
+```{r, 2. What were the five species that visited the feeders in the largest flocks in 2021?}
+
+slice_tail(arrange(summarise(group_by(filter(birds, year == "2021"), species_name), ave = mean(max_individuals)), ave), n = 5)
+
+```
+
+
+
+
+```{r, 3. Have the proportion of feeders reporting at least one Dark-eyed Junco visit per year increased or decreased over time?}
+new <- distinct(birds, year)
+new['proportion'] <- c(
+  nrow(distinct(filter(birds, species_name == "Dark-eyed Junco", max_individuals >= 1, year == "2010"), loc_id)) / nrow(distinct(filter(birds, year == "2010"), loc_id)), 
+  nrow(distinct(filter(birds, species_name == "Dark-eyed Junco", max_individuals >= 1, year == "2011"), loc_id)) / nrow(distinct(filter(birds, year == "2011"), loc_id)), 
+  nrow(distinct(filter(birds, species_name == "Dark-eyed Junco", max_individuals >= 1, year == "2012"), loc_id)) / nrow(distinct(filter(birds, year == "2012"), loc_id)), 
+  nrow(distinct(filter(birds, species_name == "Dark-eyed Junco", max_individuals >= 1, year == "2013"), loc_id)) / nrow(distinct(filter(birds, year == "2013"), loc_id)), 
+  nrow(distinct(filter(birds, species_name == "Dark-eyed Junco", max_individuals >= 1, year == "2014"), loc_id)) / nrow(distinct(filter(birds, year == "2014"), loc_id)), 
+  nrow(distinct(filter(birds, species_name == "Dark-eyed Junco", max_individuals >= 1, year == "2015"), loc_id)) / nrow(distinct(filter(birds, year == "2015"), loc_id)), 
+  nrow(distinct(filter(birds, species_name == "Dark-eyed Junco", max_individuals >= 1, year == "2016"), loc_id)) / nrow(distinct(filter(birds, year == "2016"), loc_id)), 
+  nrow(distinct(filter(birds, species_name == "Dark-eyed Junco", max_individuals >= 1, year == "2017"), loc_id)) / nrow(distinct(filter(birds, year == "2017"), loc_id)), 
+  nrow(distinct(filter(birds, species_name == "Dark-eyed Junco", max_individuals >= 1, year == "2018"), loc_id)) / nrow(distinct(filter(birds, year == "2018"), loc_id)), 
+  nrow(distinct(filter(birds, species_name == "Dark-eyed Junco", max_individuals >= 1, year == "2019"), loc_id)) / nrow(distinct(filter(birds, year == "2019"), loc_id)), 
+  nrow(distinct(filter(birds, species_name == "Dark-eyed Junco", max_individuals >= 1, year == "2020"), loc_id)) / nrow(distinct(filter(birds, year == "2020"), loc_id)), 
+  nrow(distinct(filter(birds, species_name == "Dark-eyed Junco", max_individuals >= 1, year == "2021"), loc_id)) / nrow(distinct(filter(birds, year == "2021"), loc_id))
+  )
+ggplot(data = new, aes(x = year, y = proportion)) + 
+  geom_point() + 
+  geom_path() +
+  labs(x = "Year",
+       y = "Proportion of Feeders",
+       title = "Decrease in Proportion of Feeders")
+```
+
+## Part 3: EDA 
+
+
+```{r}
+library(grid)
+
+grob1 <- grobTree(textGrob("May be due to", x=0.735,  y=0.75, hjust=0,
+  gp=gpar(col="red", fontsize=12, fontface="italic")))
+grob2 <- grobTree(textGrob("increase in reports", x=0.67,  y=0.7, hjust=0,
+  gp=gpar(col="red", fontsize=12, fontface="italic")))
+grob3 <- grobTree(textGrob("from home bird feeders", x=0.6,  y=0.65, hjust=0,
+  gp=gpar(col="red", fontsize=12, fontface="italic")))
+
+  ggplot(filter(birds, year %in% c(2011:2021), species_name %in% c("Mallard (Domestic type)", "Mallard (Northern)")), aes(x = year, y = max_individuals, color = species_name)) +
+    geom_col(alpha = 0.4) +
+    labs(x = "Year",
+         y = "Flock Size",
+       title = "Increase in Domestic Type versus Northern Mallard From 2011-2021") +
+    annotation_custom(grob1) +
+    annotation_custom(grob2) +
+    annotation_custom(grob3) +
+    scale_color_manual(values=c("coral1", "cornflowerblue")) +
+    theme_bw()
+```
+
+
+## Part 4: Parameter estimation
+
+
+```{r, 3. Compute an estimate of the average flock size of Dark-eyed Juncos feeding at bird feeders in 2021 in the Bay Area based on the sample mean.}
+
+data_4 <- filter(birds, species_name == "Dark-eyed Junco" & year == "2021")
+summarise(data_4, ave = mean(max_individuals))
+```
+
+
+
+```{r, 4. Plot a histogram of the distribution of Dark-eyed Junco flock size in 2021.}
+
+plot_4_4 <- ggplot(data_4, aes(x = max_individuals)) + 
+  geom_histogram(col = "white", binwidth = 1) +
+  labs(x = "Flock Size",
+       y = "Count",
+       title = "Distribution of Dark-eyed Junco flock Size in 2021")
+
+plot_4_4
+```
+
+```{r, 5. plot the Poisson distribution that you fit on top of your histogram of flock size from the previous question}
+
+bird_5 <- filter(birds, species_name == "Dark-eyed Junco", year == "2021")
+fit <- rpois(length(bird_5$max_individuals), 3.116519)
+
+plot_4_4 +
+  geom_density(aes(fit), stat = "count", color = "red") + 
+  labs(x = "Flock Size",
+       y = "Count",
+       title = "Distribution of Dark-eyed Junco Flock Size Fit by Poisson Distribution in 2021")
+
+```
+
+
+```{r, 6. Use your estimated Poisson distribution to generate 1,000 parametric bootstrap sampled versions of your average flock size estimate and plot a histogram of your bootstrapped estimates.}
+
+set.seed(100)
+sample_data <- filter(birds, year == "2021", species_name=="Dark-eyed Junco")$max_individuals
+
+p_boot_mean_df <- map_df(1:1000, function(i) {
+  bootstrap_data <- rnorm(length(sample_data), mean(sample_data), sd(sample_data))
+  data.frame(boot_mean = mean(bootstrap_data))
+})
+ 
+p_bias <- mean(p_boot_mean_df$boot_mean) - mean(sample_data)
+p_bias
+
+p_var <- var(p_boot_mean_df$boot_mean)
+p_var
+
+p_boot_mean_df %>%
+  ggplot() +
+  geom_histogram(aes(x = boot_mean), color = "white",
+                 binwidth = 0.01) +
+  # add a line for the sample estimate of the mean
+  geom_vline(xintercept = mean(sample_data), 
+             color = "orange", size = 2) +
+  # add a line for the bootstrapped estimate of the mean
+  geom_vline(xintercept = mean(p_boot_mean_df$boot_mean), 
+             color = "cornflowerblue", size = 2) +
+  labs(x = "bootstrapped sample mean", title = "Parametric Bootstrap Sampled Estimate") +
+  theme_classic()
+
+```
+
+
+
+
+```{r, 7. Generate 1,000 non-parametric bootstrapped versions of your estimate and plot a histogram of the distribution of your bootstrapped estimates.}
+set.seed(100)
+
+np_boot_mean_df <- map_df(1:1000, function(i) {
+  bootstrap_data <- sample(sample_data, length(sample_data), replace = TRUE)
+  data.frame(boot_mean = mean(bootstrap_data))
+})
+
+np_bias <- mean(np_boot_mean_df$boot_mean) - mean(sample_data)
+np_bias
+
+np_var <- var(np_boot_mean_df$boot_mean)
+np_var
+
+np_boot_mean_df %>%
+  ggplot() +
+  geom_histogram(aes(x = boot_mean), color = "white",
+                 binwidth = 0.01) +
+  # add a line for the sample estimate of the mean
+  geom_vline(xintercept = mean(sample_data), 
+             color = "orange", size = 2) +
+  # add a line for the bootstrapped estimate of the mean
+  geom_vline(xintercept = mean(np_boot_mean_df$boot_mean), 
+             color = "cornflowerblue", size = 2) +
+  labs(x = "bootstrapped sample mean", title = "Nonparametric Bootstrap Sampled Estimate") +
+  theme_classic()
+
+```
+
+
+
+## Part 5: Become a citizen scientist!
+
